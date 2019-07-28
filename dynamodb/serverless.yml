@@ -16,6 +16,8 @@ provider:
   # This is where your environment variables go
   environment:
     ITEM_TABLE: Item-${self:provider.stage}
+    AUTH_0_SECRET_ID: Auth0Secret-${self:provider.stage}
+    AUTH_0_SECRET_FIELD: auth0Secret
 
   # This is where you specify permissions
   iamRoleStatements:
@@ -28,6 +30,15 @@ provider:
         - dynamodb:DeleteItem
         - dynamodb:UpdateItem
       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ITEM_TABLE}
+    # Auth0 Secrets
+    - Effect: Allow
+      Action:
+        - secretsmanager:GetSecretValue
+      Resource: !Ref Auth0Secret
+    - Effect: Allow
+      Action:
+        - kms:Decrypt
+      Resource: !GetAtt KMSKey.Arn
 
   # This is where you can specify names and models
   custom:
@@ -43,6 +54,10 @@ provider:
           schema: ${file(models/create-item-request.json)}
 
 functions:
+  # Custom Authentication
+  Auth:
+    handler: src/lambda/auth/auth0Authorizer.handler
+
   # GET /items/{itemId}
   GetItem:
     handler: src/lambda/http/getItem.handler
@@ -51,6 +66,8 @@ functions:
           method: get
           path: items/{itemId}
           cors: true
+          # Add authorization
+          authorizer: Auth
   # GET /items
   GetItems:
     handler: src/lambda/http/getItems.handler
@@ -59,6 +76,8 @@ functions:
           method: get
           path: items
           cors: true
+          # Add authorization
+          authorizer: Auth
   # POST /items
   CreateItem:
     handler: src/lambda/http/createItem.handler
@@ -68,6 +87,8 @@ functions:
           path: items
           cors: true
           reqValidatorName: RequestBodyValidator
+          # Add authorization
+          authorizer: Auth
           documentation:
             summary: Create a new item
             description: Create a new item
@@ -82,6 +103,8 @@ functions:
           path: items/{itemId}
           cors: true
           reqValidatorName: RequestBodyValidator
+          # Add authorization
+          authorizer: Auth
           documentation:
             summary: Update an item
             description: Update an item
@@ -95,6 +118,8 @@ functions:
           method: delete
           path: items/{itemId}
           cors: true
+          # Add authorization
+          authorizer: Auth
 
 resources:
   Resources:
@@ -123,3 +148,39 @@ resources:
           Ref: ApiGatewayRestApi
         ValidateRequestBody: true
         ValidateRequestParameters: false
+
+    # Auth0 KMS
+    KMSKey:
+      Type: AWS::KMS::Key
+      Properties:
+        Description: KMS key to encrypt Auth0 secret
+        KeyPolicy:
+          Version: '2012-10-17'
+          Id: key-default-1
+          Statement:
+            - Sid: Allow administration of the key
+              Effect: Allow
+              Principal:
+                AWS:
+                  Fn::Join:
+                    - ':'
+                    - - 'arn:aws:iam:'
+                      - Ref: AWS::AccountId
+                      - 'root'
+              Action:
+                - 'kms:*'
+              Resource: '*'
+
+    # Key name
+    KMSKeyAlias:
+      Type: AWS::KMS::Alias
+      Properties:
+        AliasName: alias/auth0Key-${self:provider.stage}
+        TargetKeyId: !Ref KMSKey
+    # OAuth Secret
+    Auth0Secret:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Name: ${self:provider.environment.AUTH_0_SECRET_ID}
+        Description: Auth0 Secret
+        KmsKeyId: !Ref KMSKey
