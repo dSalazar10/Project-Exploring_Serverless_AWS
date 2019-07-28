@@ -1,8 +1,7 @@
 export interface Item {
-    id: string
+    itemId: string
     userId: string
     name: string
     description: string
-    createdAt: string
-    updatedAt: string
+    timestamp: string
 }

@@ -6,30 +6,33 @@ import {getUserId} from "../auth/utils";
 
 const itemAccess = new ItemAccess();
 
-export async function getItems(): Promise<Item[]> {
-  return itemAccess.getItems();
+export async function getItems(jwtToken: string): Promise<Item[]> {
+    const userId = getUserId(jwtToken);
+    return itemAccess.getItems(userId);
 }
 
-export async function getItem(itemId): Promise<Item> {
-    return itemAccess.getItem(itemId);
+export async function getItem(itemId, jwtToken: string): Promise<Item> {
+    const userId = getUserId(jwtToken);
+    return itemAccess.getItem(itemId, userId);
 }
 export async function createItem(itemRequest: ItemRequest, jwtToken: string): Promise<Item> {
-  const itemId = uuid.v4();
-  const userId = getUserId(jwtToken);
-  return await itemAccess.createItem({
-      id: itemId,
+    const itemId = uuid.v4();
+    const userId = getUserId(jwtToken);
+    return await itemAccess.createItem({
+      itemId: itemId,
       userId: userId,
       name: itemRequest.name,
       description: itemRequest.description,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-  });
+      timestamp: new Date().toISOString(),
+    });
 }
 
-export function updateItem(itemId: string, item: ItemRequest) {
-    return itemAccess.updateItem(itemId, item);
+export function updateItem(itemId: string, item: ItemRequest, jwtToken: string) {
+    const userId = getUserId(jwtToken);
+    return itemAccess.updateItem(itemId, item, userId);
 }
 
-export function deleteItem(itemId: string) {
-    return itemAccess.deleteItem(itemId);
+export function deleteItem(itemId: string, jwtToken: string) {
+    const userId = getUserId(jwtToken);
+    return itemAccess.deleteItem(itemId, userId);
 }

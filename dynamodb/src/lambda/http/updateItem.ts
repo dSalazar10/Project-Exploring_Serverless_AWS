@@ -7,7 +7,10 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     console.log('Processing event: ', event);
     const itemId = event.pathParameters.itemId;
     const item: ItemRequest = JSON.parse(event.body);
-    const results = await updateItem(itemId, item);
+    const authorization = event.headers.Authorization;
+    const split = authorization.split(' ');
+    const jwtToken = split[1];
+    const results = await updateItem(itemId, item, jwtToken);
     return {
       statusCode: 200,
       headers: {

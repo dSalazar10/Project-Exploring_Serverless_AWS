@@ -10,8 +10,8 @@ export class ItemAccess {
     private readonly itemsTable = process.env.ITEM_TABLE) {
   }
 
-  async getItem(itemId): Promise<Item> {
-    console.log('Getting an item ', itemId);
+  async getItem(itemId, userId: string): Promise<Item> {
+    console.log('Getting an item ', itemId, userId);
     const result = await this.docClient.get({
       TableName: this.itemsTable,
       Key: { id: itemId }
@@ -19,8 +19,8 @@ export class ItemAccess {
     return result.Item as Item;
   }
 
-  async getItems(): Promise<Item[]> {
-    console.log('Getting all groups');
+  async getItems(userId: string): Promise<Item[]> {
+    console.log('Getting all groups', userId);
     const result = await this.docClient.scan({
       TableName: this.itemsTable
     }).promise();
@@ -38,8 +38,8 @@ export class ItemAccess {
     return item
   }
 
-  async updateItem(itemId: string, item: ItemRequest) {
-    console.log('Getting an item ', itemId);
+  async updateItem(itemId: string, item: ItemRequest, userId: string) {
+    console.log('Getting an item ', itemId, userId);
     await this.docClient.update({
       TableName: this.itemsTable,
       Key: { id: itemId },
@@ -53,12 +53,21 @@ export class ItemAccess {
         "#description": "description"
       }
     }).promise();
+    /*
+    * .query({
+    TableName: 'table-name',
+    IndexName: 'index-name',
+    KeyConditionExpression: 'paritionKey = :paritionKey',
+    ExpressionAttributeValues: {
+      ':paritionKey': partitionKeyValue
+    }
+    * */
     return itemId;
 
   }
 
-  async deleteItem(itemId): Promise<number> {
-    console.log('Getting an item ', itemId);
+  async deleteItem(itemId, userId: string): Promise<number> {
+    console.log('Getting an item ', itemId, userId);
     await this.docClient.delete({
       TableName: this.itemsTable,
       Key: { id: itemId }

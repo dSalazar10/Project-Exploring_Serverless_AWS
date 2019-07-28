@@ -5,7 +5,10 @@ import {getItem} from "../../businessLogic/items";
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     console.log('Processing event: ', event);
     const itemId = event.pathParameters.itemId;
-    const item = await getItem(itemId);
+    const authorization = event.headers.Authorization;
+    const split = authorization.split(' ');
+    const jwtToken = split[1];
+    const item = await getItem(itemId, jwtToken);
     if (!item) {
         return {
           statusCode: 400,
