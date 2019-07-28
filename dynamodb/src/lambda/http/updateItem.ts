@@ -1,0 +1,20 @@
+import {APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult} from 'aws-lambda'
+import 'source-map-support/register'
+import {ItemRequest} from "../../requests/ItemRequest";
+import {updateItem} from "../../businessLogic/items";
+
+export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    console.log('Processing event: ', event);
+    const itemId = event.pathParameters.itemId;
+    const item: ItemRequest = JSON.parse(event.body);
+    const results = await updateItem(itemId, item);
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({
+          results
+      })
+    }
+};
