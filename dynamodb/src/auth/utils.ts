@@ -8,5 +8,6 @@ import { JwtToken } from './JwtToken'
  */
 export function getUserId(jwtToken: string): string {
   const decodedJwt = decode(jwtToken) as JwtToken;
+  if (!decodedJwt) return '';
   return decodedJwt.sub;
 }

@@ -6,11 +6,11 @@ import {createItem} from "../../businessLogic/items";
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
     console.log('Processing event: ', event);
     const newItem: ItemRequest = JSON.parse(event.body);
-    const authorization = event.headers.Authorization;
-    const split = authorization.split(' ');
-    const jwtToken = split[1];
+    // const authorization = event.headers.Authorization;
+    // const split = authorization.split(' ');
+    // const jwtToken = split[1];
 
-    const results = await createItem(newItem, jwtToken);
+    const results = await createItem(newItem/*, jwtToken*/);
     return {
       statusCode: 200,
       headers: {

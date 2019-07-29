@@ -15,8 +15,7 @@ provider:
 
   # This is where your environment variables go
   environment:
-    ITEM_TABLE: Item-${self:provider.stage}
-    INDEX_NAME: ItemIdIndex
+    ITEM_TABLE: Items-${self:provider.stage}
     AUTH_0_SECRET_ID: Auth0Secret-${self:provider.stage}
     AUTH_0_SECRET_FIELD: auth0Secret
 
@@ -30,6 +29,7 @@ provider:
         - dynamodb:GetItem
         - dynamodb:DeleteItem
         - dynamodb:UpdateItem
+        - dynamodb:Query
       Resource: arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ITEM_TABLE}
     # Auth0 Secrets
     - Effect: Allow
@@ -95,20 +95,20 @@ functions:
             description: Create a new item
             requestModels:
               'application/json': ItemRequest
-  # PATCH /items/{itemId}
-  UpdateItem:
-    handler: src/lambda/http/updateItem.handler
+  # PATCH /items/{itemId}/edit
+  EditItem:
+    handler: src/lambda/http/editItem.handler
     events:
       - http:
           method: patch
-          path: items/{itemId}
+          path: items/{itemId}/edit
           cors: true
           reqValidatorName: RequestBodyValidator
           # Add authorization
           #authorizer: Auth
           documentation:
-            summary: Update an item
-            description: Update an item
+            summary: Edit an item
+            description: Edit an item
             requestModels:
               'application/json': ItemRequest
   # DELETE /items/{itemId}
@@ -125,32 +125,18 @@ functions:
 resources:
   Resources:
     # Example table resource
-    ItemDynamoDBTable:
+    ItemsDynamoDBTable:
       Type: AWS::DynamoDB::Table
       Properties:
         AttributeDefinitions:
-          - AttributeName: userId
-            AttributeType: S
           - AttributeName: itemId
             AttributeType: S
-          - AttributeName: timestamp
-            AttributeType: S
         KeySchema:
-          # This will be the partition key
-          - AttributeName: userId
+          - AttributeName: itemId
             KeyType: HASH
-          - AttributeName: timestamp
-            KeyType: RANGE
         BillingMode: PAY_PER_REQUEST
         # Name the Table as the same as the environment variable
         TableName: ${self:provider.environment.ITEM_TABLE}
-        GlobalSecondaryIndexes:
-          - IndexName: ${self:provider.environment.INDEX_NAME}
-            KeySchema:
-              - AttributeName: itemId
-                KeyType: HASH
-            Projection:
-              ProjectionType: ALL
 
     # Validate request body
     RequestBodyValidator:
